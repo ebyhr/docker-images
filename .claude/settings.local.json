@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(cat:*)",
+      "Bash(make:*)",
+      "Bash(chmod:*)",
+      "Bash(docker run:*)",
+      "Bash(timeout 30 docker run --rm testing/hive3.1-hive:latest bash -c \"/etc/hadoop-init.d/00-setup-dirs.sh && ls -la /var/log/ && echo ''''---'''' && /usr/bin/supervisord -c /etc/supervisord.conf\")"
+    ]
+  }
+}

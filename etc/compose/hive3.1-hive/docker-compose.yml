@@ -1,4 +1,28 @@
 services:
+  oracle:
+    hostname: oracle
+    image: gvenzl/oracle-free:23.9-slim
+    ports:
+      - "1521:1521"
+    environment:
+      ORACLE_PASSWORD: sys_user_password
+      APP_USER: hive_metastore
+      APP_USER_PASSWORD: hive_metastore
+
   hadoop-master:
+    depends_on:
+      - oracle
     hostname: hadoop-master
-    image: testing/hive3.1-hive:latest$ARCH
+    image: testing/hive3.1-hive:latest
+    ports:
+      - "9083:9083"
+
+  starburst-enterprise:
+    image: harbor.starburstdata.net/starburstdata/starburst-enterprise:476-e
+    container_name: starburst-enterprise
+    depends_on:
+      - hadoop-master
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./hive.properties:/etc/starburst/catalog/hive.properties

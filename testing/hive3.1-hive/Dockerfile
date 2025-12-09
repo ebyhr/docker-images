@@ -16,7 +16,9 @@ FROM testing/almalinux9-oj17:unlabelled$ARCH
 ARG JAVA8_ZULU_VERSION=8.64.0.19-ca-jdk8.0.345
 
 RUN yum install -y \
-    mariadb-server \
+    libaio \
+    bc \
+    net-tools \
     openssh \
     openssh-clients \
     openssh-server \
@@ -36,6 +38,13 @@ RUN yum install -y \
 # Override JAVA_HOME inherited from testing/almalinux9-oj17
 ENV JAVA_HOME=/usr/lib/jvm/zulu-8
 
+# Oracle Database configuration
+# Oracle runs as a separate container (gvenzl/oracle-free:23.9-slim)
+# See README for docker-compose setup
+ENV ORACLE_HOST=oracle \
+    ORACLE_PORT=1521 \
+    ORACLE_SERVICE=FREEPDB1
+
 ARG HADOOP_VERSION=3.1.2
 ARG HIVE_VERSION=3.1.3
 
@@ -49,10 +58,10 @@ RUN curl -fLsS -o /tmp/hadoop.tar.gz --url $HADOOP_BINARY_PATH && \
 RUN curl -fLsS -o /tmp/hive.tar.gz --url $HIVE_BINARY_PATH && \
     tar xzf /tmp/hive.tar.gz --directory /opt && mv /opt/apache-hive-${HIVE_VERSION}-bin /opt/hive
 
-ARG MYSQL_CONNECTOR_VERSION=8.0.13
+ARG ORACLE_JDBC_VERSION=23.3.0.23.09
 ARG AWS_SDK_VERSION=1.11.906
 RUN mkdir /opt/hive/auxlib && \
-    curl -fLsS -o /opt/hive/auxlib/mysql-connector-java-$MYSQL_CONNECTOR_VERSION.jar https://repo1.maven.org/maven2/mysql/mysql-connector-java/$MYSQL_CONNECTOR_VERSION/mysql-connector-java-$MYSQL_CONNECTOR_VERSION.jar && \
+    curl -fLsS -o /opt/hive/auxlib/ojdbc8.jar https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc8/$ORACLE_JDBC_VERSION/ojdbc8-$ORACLE_JDBC_VERSION.jar && \
     curl -fLsS -o /opt/hive/auxlib/aws-java-sdk-core-$AWS_SDK_VERSION.jar https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-core/$AWS_SDK_VERSION/aws-java-sdk-core-$AWS_SDK_VERSION.jar && \
     curl -fLsS -o /opt/hive/auxlib/aws-java-sdk-s3-$AWS_SDK_VERSION.jar https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-s3/$AWS_SDK_VERSION/aws-java-sdk-s3-$AWS_SDK_VERSION.jar
 
@@ -70,8 +79,8 @@ RUN passwd --unlock root
 # Copy configuration files
 COPY ./files /
 
-# Run setup script
-RUN /root/setup.sh
+# Note: Oracle metastore setup moved to runtime (see /etc/hadoop-init.d/)
+# since Oracle container must be running first
 
 # HDFS port
 EXPOSE 9000 9870
